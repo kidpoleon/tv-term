@@ -1,4 +1,3 @@
 requests
-Pillow
-pytesseract
-colorama
+rich
+pyinstaller
