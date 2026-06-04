@@ -396,6 +396,7 @@ Interactive Mode:
     # Signal handling
     def signal_handler(sig, frame):
         print_warning("\nInterrupted. Cleaning up...")
+        controller.shutdown_event.set()
         controller.cleanup()
         print_success("Cleanup complete.")
         sys.exit(0)
@@ -405,8 +406,10 @@ Interactive Mode:
     try:
         # Run check
         is_recheck = bool(args.recheck)
+        input_source = args.file if args.file else "database"
         output_files = controller.run_check(
             content,
+            input_source=input_source,
             output_prefix=args.output_prefix,
             is_recheck=is_recheck,
             recheck_file=args.recheck,

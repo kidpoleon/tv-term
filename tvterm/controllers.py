@@ -24,6 +24,7 @@ from tvterm.utils import (
     resolve_youtube_url,
     is_uncheckable,
     get_iso8601_timestamp,
+    extract_domain_name,
 )
 
 
@@ -289,20 +290,31 @@ class ContentLoader:
             return None
 
     def load_from_url(self, url: str) -> Optional[str]:
-        """Load content from URL."""
-        try:
-            r = requests.get(
-                url, headers={"User-Agent": USER_AGENT}, timeout=20
-            )
-            r.raise_for_status()
-            return r.content.decode("utf-8", errors="ignore")
-        except Exception as e:
-            import logging
-            logging.error(f"Error loading URL: {e}")
-            return None
+        """Load content from URL with retry logic."""
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                r = requests.get(
+                    url,
+                    headers={"User-Agent": USER_AGENT},
+                    timeout=20,
+                    allow_redirects=True,
+                )
+                r.raise_for_status()
+                return r.content.decode("utf-8", errors="ignore")
+            except requests.exceptions.Timeout:
+                import logging
+                logging.warning(f"Timeout loading URL (attempt {attempt + 1}/{max_retries}): {url}")
+                if attempt == max_retries - 1:
+                    return None
+            except requests.exceptions.RequestException as e:
+                import logging
+                logging.error(f"Error loading URL: {e}")
+                return None
+        return None
 
     def load_from_database(self, db_path: Path) -> Optional[str]:
-        """Load content from links database."""
+        """Load content from links database with retry logic."""
         try:
             db_manager = IniManager(db_path)
             links = db_manager.load().get("defaultlinks", {})
@@ -311,15 +323,29 @@ class ContentLoader:
 
             content = ""
             for name, url in links.items():
-                try:
-                    r = requests.get(
-                        url, headers={"User-Agent": USER_AGENT}, timeout=20
-                    )
-                    r.raise_for_status()
-                    content += r.content.decode("utf-8", errors="ignore") + "\n"
-                except Exception as e:
-                    import logging
-                    logging.warning(f"Failed to download '{name}': {e}")
+                max_retries = 3
+                for attempt in range(max_retries):
+                    try:
+                        r = requests.get(
+                            url,
+                            headers={"User-Agent": USER_AGENT},
+                            timeout=20,
+                            allow_redirects=True,
+                        )
+                        r.raise_for_status()
+                        content += r.content.decode("utf-8", errors="ignore") + "\n"
+                        break
+                    except requests.exceptions.Timeout:
+                        import logging
+                        logging.warning(
+                            f"Timeout loading '{name}' (attempt {attempt + 1}/{max_retries})"
+                        )
+                        if attempt == max_retries - 1:
+                            logging.error(f"Failed to download '{name}' after retries")
+                    except Exception as e:
+                        import logging
+                        logging.warning(f"Failed to download '{name}': {e}")
+                        break
 
             return content if content else None
         except Exception as e:
@@ -396,6 +422,7 @@ class CheckerController:
 
         self.stats = CheckStats()
         self.lock = threading.Lock()
+        self.shutdown_event = threading.Event()
 
         # Output files
         self.online_file = None
@@ -419,12 +446,15 @@ class CheckerController:
 
     def check_stream(self, stream: Stream) -> Tuple[Stream, bool, str]:
         """Check a single stream and return result."""
+        if self.shutdown_event.is_set():
+            return stream, False, "Cancelled"
         is_online, status = self.checker.verify_stream(stream)
         return stream, is_online, status
 
     def run_check(
         self,
         content: str,
+        input_source: str = "unknown",
         output_prefix: str = "tv-term",
         is_recheck: bool = False,
         recheck_file: Optional[str] = None,
@@ -437,13 +467,14 @@ class CheckerController:
 
         self.stats.total = len(streams)
 
-        # Determine output paths (no folders, just prefix + ISO-8601)
+        # Determine output paths with new naming convention: TYPE_DOMAIN-NAME_STATUS_ISO-8601.EXT
         timestamp = get_iso8601_timestamp()
         output_dir = Path(self.config.output_dir)
+        domain_name = extract_domain_name(input_source)
 
-        online_path = output_dir / f"{output_prefix}_online_{timestamp}.m3u"
-        offline_path = output_dir / f"{output_prefix}_offline_{timestamp}.m3u"
-        unreachable_path = output_dir / f"{output_prefix}_unreachable_{timestamp}.m3u"
+        online_path = output_dir / f"{output_prefix}_{domain_name}_online_{timestamp}.m3u"
+        offline_path = output_dir / f"{output_prefix}_{domain_name}_offline_{timestamp}.m3u"
+        unreachable_path = output_dir / f"{output_prefix}_{domain_name}_unreachable_{timestamp}.m3u"
 
         # Skip known good URLs
         known_good_urls = set()
@@ -494,6 +525,10 @@ class CheckerController:
 
                 # Process results as they complete
                 for future in as_completed(future_to_stream):
+                    # Check if shutdown was requested
+                    if self.shutdown_event.is_set():
+                        break
+
                     stream, is_online, status = future.result()
 
                     with self.lock:

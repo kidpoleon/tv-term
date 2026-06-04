@@ -175,3 +175,36 @@ def validate_output_dir(output_dir: str) -> Path:
         logging.error(f"Failed to create output directory: {e}")
         # Fallback to current directory
         return Path.cwd()
+
+
+def extract_domain_name(input_source: str) -> str:
+    """
+    Extract domain name from input source (URL or file path).
+    Returns a sanitized domain name for use in output filenames.
+    """
+    try:
+        if input_source.startswith(("http://", "https://")):
+            # Extract domain from URL
+            parsed = urlparse(input_source)
+            domain = parsed.netloc.replace("www.", "")
+            # Remove port if present
+            domain = domain.split(":")[0]
+        else:
+            # Extract filename from local file path
+            path = Path(input_source)
+            domain = path.stem
+            # Remove common extensions if present
+            domain = domain.replace("_", "-").replace(".", "-")
+        
+        # Sanitize domain name
+        domain = re.sub(r"[^a-zA-Z0-9-]", "-", domain)
+        domain = domain.strip("-")
+        
+        # Fallback if domain is empty
+        if not domain:
+            domain = "unknown"
+        
+        return domain
+    except Exception as e:
+        logging.warning(f"Could not extract domain name: {e}")
+        return "unknown"
