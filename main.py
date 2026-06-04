@@ -6,7 +6,8 @@ A modern, efficient tool for validating IPTV playlists with a beautiful TUI.
 Supports M3U/M3U8 files, URLs, and XTREAM API endpoints.
 
 Author: kidpoleon
-Version: 1.0.0
+Email: kidpoleon@proton.me
+Version: 1.0.2
 License: MIT
 """
 

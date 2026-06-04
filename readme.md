@@ -11,6 +11,9 @@ A modern, efficient tool for validating IPTV playlists with a beautiful TUI.
 [![Python 3.7+](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: PEP 8](https://img.shields.io/badge/code%20style-PEP%208-green.svg)](https://www.python.org/dev/peps/pep-0008/)
+[![Version](https://img.shields.io/badge/version-1.0.2-orange.svg)](https://github.com/kidpoleon/tv-term/releases)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/kidpoleon/tv-term)
+[![GitHub Stars](https://img.shields.io/github/stars/kidpoleon/tv-term?style=social)](https://github.com/kidpoleon/tv-term/stargazers)
 
 </div>
 
@@ -19,6 +22,18 @@ A modern, efficient tool for validating IPTV playlists with a beautiful TUI.
 tv-term is a complete rewrite focused on speed, accuracy, and simplicity. It features a modern Terminal User Interface (TUI) powered by the `rich` library, providing beautiful progress bars, tables, and real-time statistics in your terminal.
 
 It reads M3U/M3U8 playlists from local files or URLs (including XTREAM API endpoints), checks each stream to see if it's online using optimized ffprobe verification, and saves the results to organized output directories.
+
+## Screenshots
+
+<div align="center">
+
+### Main Interface
+<img src="screenshots/screenshot_01.png" alt="tv-term main interface" width="800">
+
+### Progress Display
+<img src="screenshots/screenshot_02.png" alt="tv-term progress display" width="800">
+
+</div>
 
 ## Key Features
 
@@ -141,31 +156,31 @@ tv-term.exe --version
 
 ```bash
 # Run in interactive mode (no arguments required)
-python tv_term.py
+python main.py
 
 # Check a local M3U file
-python tv_term.py -f playlist.m3u
+python main.py -f playlist.m3u
 
 # Check a remote URL
-python tv_term.py -f "http://example.com/playlist.m3u"
+python main.py -f "http://example.com/playlist.m3u"
 
 # Check an XTREAM API endpoint
-python tv_term.py -f "http://your-server.com/get.php?username=YOUR_USER&password=YOUR_PASS&type=m3u_plus"
+python main.py -f "http://your-server.com/get.php?username=YOUR_USER&password=YOUR_PASS&type=m3u_plus"
 
 # Check with custom output filename
-python tv_term.py -f "playlist.m3u" -o "my_checked.m3u"
+python main.py -f "playlist.m3u" -o "my_checked.m3u"
 
 # Re-check an existing output file
-python tv_term.py -r "my_checked.m3u"
+python main.py -r "my_checked.m3u"
 
 # Check all playlists from the database
-python tv_term.py -d -o "all_checked.m3u"
+python main.py -d -o "all_checked.m3u"
 
 # Use 20 workers with 10-second timeout
-python tv_term.py -f "playlist.m3u" -w 20 -t 10
+python main.py -f "playlist.m3u" -w 20 -t 10
 
 # Show version
-python tv_term.py --version
+python main.py --version
 ```
 
 ### Manage Links Database
@@ -174,7 +189,7 @@ python tv_term.py --version
 # Interactive database manager
 tv-term.exe --manage-db
 # or
-python tv_term.py --manage-db
+python main.py --manage-db
 ```
 
 ### All Command-Line Arguments
@@ -199,17 +214,21 @@ python tv_term.py --manage-db
 
 ## Output Structure
 
-tv-term automatically organizes checked streams into the `output/` directory:
+tv-term automatically organizes checked streams with the naming convention: `TYPE_DOMAIN-NAME_STATUS_ISO-8601.EXT`
 
-```
-output/
-├── online/
-│   └── online_YYYYMMDD_HHMMSS.m3u    # All working streams
-├── offline/
-│   └── offline_YYYYMMDD_HHMMSS.m3u   # Non-working streams
-└── unreachable/
-    └── unreachable_YYYYMMDD_HHMMSS.m3u  # Streams with tokens/auth
-```
+Where:
+- **TYPE**: LOCAL, URL, XTREAM, or DATABASE (source type)
+- **DOMAIN-NAME**: Extracted domain or filename from source
+- **STATUS**: online, offline, or unreachable
+- **ISO-8601**: Timestamp in ISO-8601 format (e.g., 20260604T090000)
+- **EXT**: .m3u file extension
+
+Examples:
+- `LOCAL_aria_online_20260604T090931.m3u`
+- `URL_192-168-0-100_offline_20260604T091113.m3u`
+- `XTREAM_myserver_online_20260604T092000.m3u`
+
+**Note**: Custom prefixes are only used if specified by the user in interactive mode.
 
 ## Configuration
 
@@ -223,30 +242,50 @@ The application automatically creates configuration files on first run:
 tv-term natively supports XTREAM Codes API endpoints. Simply provide the full URL:
 
 ```bash
-python tv_term.py -f "http://your-server.com/get.php?username=YOUR_USER&password=YOUR_PASS&type=m3u_plus"
+python main.py -f "http://your-server.com/get.php?username=YOUR_USER&password=YOUR_PASS&type=m3u_plus"
 ```
 
 The tool will automatically detect the XTREAM API format and handle it appropriately.
 
-## What's New in v1.0.0
+## What's New
 
+### v1.0.2
+- Enhanced output naming convention: TYPE_DOMAIN-NAME_STATUS_ISO-8601.EXT
+- Added source type detection (LOCAL, URL, XTREAM, DATABASE)
+- Custom prefix only used if specified in interactive mode
+- Updated email to kidpoleon@proton.me
+- Added screenshots to documentation
+- Improved README.md with more badges and better organization
+- Added hyperlink to peterpt/IPTV-Check repository in credits
+- Improved error handling with retry logic for URL loading
+- Enhanced graceful Ctrl+C termination protocol
+
+### v1.0.1
+- Removed old monolithic tv_term.py script
+- Cleaned up unnecessary files
+- Fixed output naming convention to include domain name
+- Added graceful Ctrl+C termination protocol
+- Added retry logic for URL loading (3 retries)
+- Added retry logic for database loading
+- Improved error handling with specific exception types
+- Enhanced logging for timeout and retry scenarios
+
+### v1.0.0
 - Complete rewrite with TUI-only design
 - Removed GUI and OCR functionality for simplicity and speed
 - Improved M3U/M3U8 parsing with multiple regex patterns
 - Added XTREAM API endpoint support
-- Organized output structure (online/offline/unreachable directories)
 - Optimized stream verification using ffprobe only
 - Modern terminal UI with rich library
 - PEP 8 compliant codebase
 - Better error handling and logging
-- Updated to professional GitHub file naming standards
-- **NEW**: Interactive mode - no CLI arguments required
-- **NEW**: Windows executable with custom icon
-- **NEW**: Python version checking
-- **NEW**: Enhanced error handling with user-friendly messages
-- **NEW**: Input validation and timeout limits
-- **NEW**: Graceful keyboard interrupt handling
-- **NEW**: --version flag for quick version info
+- Interactive mode - no CLI arguments required
+- Windows executable with custom icon
+- Python version checking
+- Enhanced error handling with user-friendly messages
+- Input validation and timeout limits
+- Graceful keyboard interrupt handling
+- --version flag for quick version info
 
 ## License
 
@@ -258,5 +297,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Credits
 
-- Originally based on IPTV-Check by peterpt
+- Originally based on [IPTV-Check](https://github.com/peterpt/IPTV-Check) by peterpt
 - Complete rewrite and modernization by kidpoleon

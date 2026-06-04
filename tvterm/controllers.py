@@ -25,6 +25,7 @@ from tvterm.utils import (
     is_uncheckable,
     get_iso8601_timestamp,
     extract_domain_name,
+    get_source_type,
 )
 
 
@@ -471,10 +472,17 @@ class CheckerController:
         timestamp = get_iso8601_timestamp()
         output_dir = Path(self.config.output_dir)
         domain_name = extract_domain_name(input_source)
+        source_type = get_source_type(input_source)
 
-        online_path = output_dir / f"{output_prefix}_{domain_name}_online_{timestamp}.m3u"
-        offline_path = output_dir / f"{output_prefix}_{domain_name}_offline_{timestamp}.m3u"
-        unreachable_path = output_dir / f"{output_prefix}_{domain_name}_unreachable_{timestamp}.m3u"
+        # Use custom prefix only if specified by user, otherwise use source type
+        if output_prefix == "tv-term":
+            prefix = source_type
+        else:
+            prefix = output_prefix
+
+        online_path = output_dir / f"{prefix}_{domain_name}_online_{timestamp}.m3u"
+        offline_path = output_dir / f"{prefix}_{domain_name}_offline_{timestamp}.m3u"
+        unreachable_path = output_dir / f"{prefix}_{domain_name}_unreachable_{timestamp}.m3u"
 
         # Skip known good URLs
         known_good_urls = set()

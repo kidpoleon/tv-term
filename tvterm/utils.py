@@ -208,3 +208,22 @@ def extract_domain_name(input_source: str) -> str:
     except Exception as e:
         logging.warning(f"Could not extract domain name: {e}")
         return "unknown"
+
+
+def get_source_type(input_source: str) -> str:
+    """
+    Determine the source type (LOCAL, URL, XTREAM, DATABASE).
+    Returns the source type as a string.
+    """
+    try:
+        if input_source.startswith(("http://", "https://")):
+            if is_xtream_api_url(input_source):
+                return "XTREAM"
+            return "URL"
+        elif input_source == "database":
+            return "DATABASE"
+        else:
+            return "LOCAL"
+    except Exception as e:
+        logging.warning(f"Could not determine source type: {e}")
+        return "UNKNOWN"
