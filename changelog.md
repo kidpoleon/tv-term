@@ -2,18 +2,19 @@
 
 ## v1.0.4 (2026-06-04)
 
-**TUI improvements and performance optimization**
+**TUI improvements and codebase solidification**
 
-- Removed group skipping functionality (caused performance degradation)
-- Implemented centralized theme system for consistent styling
-- Enhanced TUI with modern design patterns:
-  - Added icons for better visual feedback (✓, ✗, ⚠, ℹ, 📄, 🗄️, 🌐)
-  - Improved color scheme with semantic color classes
-  - Better layout with consistent padding and box styles
-  - Enhanced progress bar with styled spinner
-- Improved error, success, warning, and info messages with icons
-- Better table styling with consistent borders and headers
-- More professional and comprehensible terminal UI
+- Removed group/category skipping functionality (was causing performance degradation)
+- Simplified processing to sequential verification for better reliability
+- Implemented centralized theme system for consistent TUI styling
+  - Created theme.py with centralized colors, icons, layout, and text styles
+  - Updated all views to use theme system for maintainability
+- Enhanced TUI workflow and appearance
+  - Added icons to all menu options and status messages
+  - Improved visual consistency across all UI elements
+  - Better color coding for different message types (success, warning, error, info)
+- Audited and solidified entire codebase
+- Researched and implemented terminal-UI/UX best practices
 - Updated version to 1.0.4
 
 ## v1.0.3 (2026-06-04)
