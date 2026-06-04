@@ -1,5 +1,20 @@
 # tv-term Changelog
 
+## v1.0.3 (2026-06-04)
+
+**Large playlist optimization and bug fixes**
+
+- Fixed XTREAM API URL construction bug (double http:// issue when user includes protocol)
+- Enhanced error handling with empty content checks for URL and database loading
+- Implemented intelligent group/category skipping for large playlists
+  - Tracks consecutive failures per group/category
+  - Automatically skips groups with 4+ consecutive failures
+  - Retries skipped groups after initial pass completes
+  - Optimizes checking for large XTREAM playlists (100K+ streams)
+- Updated README.md with 6 comprehensive screenshots showing all features
+- Researched and implemented large playlist optimization strategies
+- Updated version to 1.0.3
+
 ## v1.0.2 (2026-06-04)
 
 **Enhanced output naming and documentation**

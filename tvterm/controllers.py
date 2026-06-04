@@ -302,14 +302,18 @@ class ContentLoader:
                     allow_redirects=True,
                 )
                 r.raise_for_status()
-                return r.content.decode("utf-8", errors="ignore")
+                content = r.content.decode("utf-8", errors="ignore")
+                if not content or content.strip() == "":
+                    logging.warning(f"Empty content from URL (attempt {attempt + 1}/{max_retries}): {url}")
+                    if attempt == max_retries - 1:
+                        return None
+                    continue
+                return content
             except requests.exceptions.Timeout:
-                import logging
                 logging.warning(f"Timeout loading URL (attempt {attempt + 1}/{max_retries}): {url}")
                 if attempt == max_retries - 1:
                     return None
             except requests.exceptions.RequestException as e:
-                import logging
                 logging.error(f"Error loading URL: {e}")
                 return None
         return None
@@ -320,6 +324,7 @@ class ContentLoader:
             db_manager = IniManager(db_path)
             links = db_manager.load().get("defaultlinks", {})
             if not links:
+                logging.warning("No links found in database")
                 return None
 
             content = ""
@@ -334,7 +339,11 @@ class ContentLoader:
                             allow_redirects=True,
                         )
                         r.raise_for_status()
-                        content += r.content.decode("utf-8", errors="ignore") + "\n"
+                        url_content = r.content.decode("utf-8", errors="ignore")
+                        if not url_content or url_content.strip() == "":
+                            logging.warning(f"Empty content from database link: {name}")
+                            continue
+                        content += url_content + "\n"
                         break
                     except requests.exceptions.Timeout:
                         import logging
@@ -540,10 +549,22 @@ class CheckerController:
                     stream, is_online, status = future.result()
 
                     with self.lock:
+                        # Skip if stream's group is in skipped groups
+                        if stream.group in self.stats.skipped_groups:
+                            continue
+
                         self.stats.processed += 1
+
+                        # Track group statistics
+                        group = stream.group or "General"
+                        if group not in self.stats.group_stats:
+                            self.stats.group_stats[group] = {"checked": 0, "online": 0, "offline": 0, "consecutive_failures": 0}
+                        self.stats.group_stats[group]["checked"] += 1
 
                         if is_online:
                             self.stats.online += 1
+                            self.stats.group_stats[group]["online"] += 1
+                            self.stats.group_stats[group]["consecutive_failures"] = 0
                             if (
                                 ".mp3" in stream.url
                                 or ".aac" in stream.url
@@ -552,6 +573,15 @@ class CheckerController:
                             self.writer.write_entry(self.online_file, stream)
                         else:
                             self.stats.offline += 1
+                            self.stats.group_stats[group]["offline"] += 1
+                            self.stats.group_stats[group]["consecutive_failures"] += 1
+
+                            # Check if group should be skipped (4-6 consecutive failures)
+                            if self.stats.group_stats[group]["consecutive_failures"] >= 4:
+                                self.stats.skipped_groups.add(group)
+                                from tvterm.views import print_warning
+                                print_warning(f"Skipping group '{group}' due to consecutive failures (will retry later)")
+
                             if is_uncheckable(stream.url):
                                 self.writer.write_entry(
                                     self.unreachable_file, stream
@@ -573,6 +603,49 @@ class CheckerController:
             self.offline_file.close()
         if self.unreachable_file:
             self.unreachable_file.close()
+
+        # Retry skipped groups if any
+        if self.stats.skipped_groups:
+            from tvterm.views import print_info
+            print_info(f"Retrying {len(self.stats.skipped_groups)} skipped groups...")
+
+            # Collect streams from skipped groups
+            skipped_streams = [s for s in streams if s.group in self.stats.skipped_groups and s.url not in known_good_urls]
+
+            if skipped_streams:
+                # Reset skipped groups for retry
+                self.stats.skipped_groups.clear()
+
+                # Reopen output files
+                with (
+                    open(online_path, "a", encoding="utf-8-sig") as self.online_file,
+                    open(offline_path, "a", encoding="utf-8-sig") as self.offline_file,
+                    open(unreachable_path, "a", encoding="utf-8-sig") as self.unreachable_file,
+                ):
+                    # Retry skipped streams
+                    with ThreadPoolExecutor(max_workers=self.config.workers) as executor:
+                        future_to_stream = {
+                            executor.submit(self.check_stream, stream): stream
+                            for stream in skipped_streams
+                        }
+
+                        for future in as_completed(future_to_stream):
+                            if self.shutdown_event.is_set():
+                                break
+
+                            stream, is_online, status = future.result()
+
+                            with self.lock:
+                                if is_online:
+                                    self.stats.online += 1
+                                    self.writer.write_entry(self.online_file, stream)
+                                else:
+                                    self.stats.offline += 1
+                                    if is_uncheckable(stream.url):
+                                        self.writer.write_entry(self.unreachable_file, stream)
+                                        self.stats.unreachable += 1
+                                    else:
+                                        self.writer.write_entry(self.offline_file, stream)
 
         return {
             "online": str(online_path),

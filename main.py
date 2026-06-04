@@ -7,7 +7,7 @@ Supports M3U/M3U8 files, URLs, and XTREAM API endpoints.
 
 Author: kidpoleon
 Email: kidpoleon@proton.me
-Version: 1.0.2
+Version: 1.0.3
 License: MIT
 """
 
@@ -80,7 +80,11 @@ def interactive_mode() -> argparse.Namespace:
         host = input_prompt("Enter server host (e.g., your-server.com): ")
         username = input_prompt("Enter username: ")
         password = input_prompt("Enter password: ")
-        file_path = f"http://{host}/get.php?username={username}&password={password}&type=m3u_plus"
+        # Check if host already includes protocol
+        if host.startswith(("http://", "https://")):
+            file_path = f"{host}/get.php?username={username}&password={password}&type=m3u_plus"
+        else:
+            file_path = f"http://{host}/get.php?username={username}&password={password}&type=m3u_plus"
     elif choice == "4":
         use_database = True
     elif choice == "5":

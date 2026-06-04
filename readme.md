@@ -27,11 +27,23 @@ It reads M3U/M3U8 playlists from local files or URLs (including XTREAM API endpo
 
 <div align="center">
 
-### Main Interface
-<img src="screenshots/screenshot_01.png" alt="tv-term main interface" width="800">
+### Interactive Wizard
+<img src="screenshots/01_ex_wizard.png" alt="tv-term interactive wizard" width="800">
+
+### Local File Check
+<img src="screenshots/02_ex_local.png" alt="tv-term local file check" width="800">
+
+### URL Check
+<img src="screenshots/03_ex_url.png" alt="tv-term URL check" width="800">
+
+### XTREAM API Check
+<img src="screenshots/04_ex_xtream.png" alt="tv-term XTREAM API check" width="800">
 
 ### Progress Display
-<img src="screenshots/screenshot_02.png" alt="tv-term progress display" width="800">
+<img src="screenshots/05_ex_progress.png" alt="tv-term progress display" width="800">
+
+### Final Report
+<img src="screenshots/06_ex_report.png" alt="tv-term final report" width="800">
 
 </div>
 
