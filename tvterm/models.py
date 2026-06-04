@@ -79,8 +79,6 @@ class CheckStats:
     offline: int = 0
     unreachable: int = 0
     processed: int = 0
-    skipped_groups: Set[str] = field(default_factory=set)
-    group_stats: Dict[str, Dict[str, int]] = field(default_factory=dict)
 
     @property
     def success_rate(self) -> float:

@@ -7,10 +7,10 @@ Supports M3U/M3U8 files, URLs, and XTREAM API endpoints.
 
 Author: kidpoleon
 Email: kidpoleon@proton.me
-Version: 1.0.3
+Version: 1.0.4
 License: MIT
 """
 
-__version__ = "1.0.3"
+__version__ = "1.0.4"
 __author__ = "kidpoleon"
 __email__ = "kidpoleon@proton.me"

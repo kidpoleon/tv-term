@@ -1,5 +1,21 @@
 # tv-term Changelog
 
+## v1.0.4 (2026-06-04)
+
+**TUI improvements and performance optimization**
+
+- Removed group skipping functionality (caused performance degradation)
+- Implemented centralized theme system for consistent styling
+- Enhanced TUI with modern design patterns:
+  - Added icons for better visual feedback (✓, ✗, ⚠, ℹ, 📄, 🗄️, 🌐)
+  - Improved color scheme with semantic color classes
+  - Better layout with consistent padding and box styles
+  - Enhanced progress bar with styled spinner
+- Improved error, success, warning, and info messages with icons
+- Better table styling with consistent borders and headers
+- More professional and comprehensible terminal UI
+- Updated version to 1.0.4
+
 ## v1.0.3 (2026-06-04)
 
 **Large playlist optimization and bug fixes**
